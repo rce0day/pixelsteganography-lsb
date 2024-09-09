@@ -1,5 +1,7 @@
 from PIL import Image
 import wave
+from random import randint
+import base64
 
 def genData(data):
     newd = [format(ord(i), '08b') for i in data]
@@ -76,29 +78,28 @@ def decode_pixel(img):
         if (pixels[-1] % 2 != 0):
             return data
 
-def autism_function(autism_audiofile):
-    autism_audio = wave.open(autism_audiofile, mode='rb')
-    autism_frame_bytes = bytearray(list(autism_audio.readframes(autism_audio.getnframes())))
-    extracted = [autism_frame_bytes[i] & 1 for i in range(len(autism_frame_bytes))]
+def enc_function(enc_audiofile):
+    enc_audio = wave.open(enc_audiofile, mode='rb')
+    enc_frame_bytes = bytearray(list(enc_audio.readframes(enc_audio.getnframes())))
+    extracted = [enc_frame_bytes[i] & 1 for i in range(len(enc_frame_bytes))]
     string = "".join(chr(int("".join(map(str,extracted[i:i+8])),2)) for i in range(0,len(extracted),8))
     msg = string.split("###")[0]
-    autism_audio.close()
+    enc_audio.close()
     return msg
 
-def autism_is_power(autism_audio_file, string, output):
-    autism_audio = wave.open(autism_audio_file, mode='rb')
-    autism_frame_bytes = bytearray(list(autism_audio.readframes(autism_audio.getnframes())))
-    string = string + int((len(autism_frame_bytes)-(len(string)*8*8))/8) *'#'
+def enc_is_power(enc_audio_file, string, output):
+    enc_audio = wave.open(enc_audio_file, mode='rb')
+    enc_frame_bytes = bytearray(list(enc_audio.readframes(enc_audio.getnframes())))
+    string = string + int((len(enc_frame_bytes)-(len(string)*8*8))/8) *'#'
     bits = list(map(int, ''.join([bin(ord(i)).lstrip('0b').rjust(8,'0') for i in string])))
     for i, bit in enumerate(bits):
-        autism_frame_bytes[i] = (autism_frame_bytes[i] & 254) | bit
-    frame_modified = bytes(autism_frame_bytes)
+        enc_frame_bytes[i] = (enc_frame_bytes[i] & 254) | bit
+    frame_modified = bytes(enc_frame_bytes)
     with wave.open(output, 'wb') as fd:
-        fd.setparams(autism_audio.getparams())
+        fd.setparams(enc_audio.getparams())
         fd.writeframes(frame_modified)
-    autism_audio.close()
+    enc_audio.close()
 
-import base64
 
 def base64_encode_string(s):
     return base64.b64encode(s.encode()).decode()
@@ -107,7 +108,6 @@ def base64_encode_file(file_path):
     with open(file_path, "rb") as file:
         return base64.b64encode(file.read()).decode()
 
-from random import randint
 
 def create_image(width, height, output_image_name):
     img = Image.new('RGB', (width, height))
@@ -128,4 +128,4 @@ def encode_file_in_image(file_path, output_image_name):
 
 def encode_file_in_audio(input_audio_file, file_path, output_audio_name):
     encoded_string = base64_encode_file(file_path)
-    autism_is_power(input_audio_file, encoded_string, output_audio_name)
+    enc_is_power(input_audio_file, encoded_string, output_audio_name)
